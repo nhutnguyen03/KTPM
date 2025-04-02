@@ -327,9 +327,18 @@ foreach ($hdBUS->select_all() as $hoaDon) {
         <td style='width: 20%'>" . $dsSanPham . "</td>
         <td style='width: 15%'>" . number_format($hoaDon['TongTien'], 0, ',', '.') . "đ</td>
         <td style='width: 10%'>" . $hoaDon['NgayLap'] . "</td>
-        <td style='width: 10%'>" . $hoaDon['TrangThai'] . "</td>
-        <td style='width: 10%'></td>
-        </tr>";
+        <td style='width: 10%'>" . getTrangThaiDonHang($hoaDon['TrangThai']) . "</td>
+        <td style='width: 10%'>
+            <div class='tooltip'>
+                <i class='fa fa-check' onclick='duyet(" . $hoaDon['MaHD'] . ", true)'></i>
+                <span class='tooltiptext'>Duyệt</span>
+            </div>
+            <div class='tooltip'>
+                <i class='fa fa-remove' onclick='duyet(" . $hoaDon['MaHD'] . ", false)'></i>
+                <span class='tooltiptext'>Hủy</span>
+            </div>
+        </td>
+    </tr>";
     }
 
     echo "</table>";  // Kết thúc bảng
@@ -412,3 +421,20 @@ foreach ($hdBUS->select_all() as $hoaDon) {
 </body>
 
 </html>
+
+<?php
+function getTrangThaiDonHang($trangThai) {
+    switch($trangThai) {
+        case 1:
+            return '<span class="badge badge-warning">Đơn hàng mới</span>';
+        case 2:
+            return '<span class="badge badge-info">Đã gửi vận chuyển</span>';
+        case 3:
+            return '<span class="badge badge-success">Giao hàng thành công</span>';
+        case 4:
+            return '<span class="badge badge-danger">Đã hủy</span>';
+        default:
+            return '<span class="badge badge-secondary">Không xác định</span>';
+    }
+}
+?>

@@ -1,6 +1,15 @@
 var TotalPrice = 0;
 window.onload = function() {
-    khoiTao();
+    window.onload = function() {
+        khoiTao();
+    
+        // thêm tags (từ khóa) vào khung tìm kiếm
+        var tags = ["Samsung", "iPhone", "Huawei", "Oppo", "Mobi"];
+        for (var t of tags) addTags(t, "index.php?search=" + t)
+    
+        var listGioHang = getListGioHang();
+        getListFromDB(listGioHang);
+    }();
 
     // thêm tags (từ khóa) vào khung tìm kiếm
     var tags = ["Samsung", "iPhone", "Huawei", "Oppo", "Mobi"];
@@ -131,7 +140,7 @@ function addProductToTable(listProduct) {
 			</tr>
 			<tr>
 				<td colspan="5">
-					<button class="btn btn-primary" data-toggle="modal" data-target="#exampleModal" onclick="thanhToan()">
+					<button class="btn btn-primary" onclick="kiemTraThanhToan()">
 						<i class="fa fa-usd"></i> Thanh Toán 
 					</button> 
 					<button class="btn btn-danger" onclick="xoaHet()">
@@ -171,7 +180,7 @@ function xoaSanPhamTrongGioHang(masp, tensp) {
     });
 }
 
-function thanhToan() {
+function kiemTraThanhToan() {
     var listProduct = getListGioHang();
     if (!listProduct.length) {
         Swal.fire({
@@ -183,23 +192,22 @@ function thanhToan() {
         return;
     }
 
-    getCurrentUser((user) => {
-        if (user == null) {
-            Swal.fire({
-                title: 'Xin chào!',
-                text: 'Bạn cần đăng nhập để mua hàng',
-                type: 'info',
-                grow: 'row',
-                confirmButtonText: 'Đăng nhập',
-                cancelButtonText: 'Trở về',
-                showCancelButton: true
-            }).then((result) => {
-                if (result.value) {
-                    showTaiKhoan(true);
-                }
-            })
+    // Đảm bảo modal thanh toán luôn bị ẩn trước khi kiểm tra
+    $('#exampleModal').modal('hide');
 
-        } else if (user.TrangThai == 0) {
+    // Reset UserHienTai trước khi kiểm tra
+    UserHienTai = null;
+
+    getCurrentUser((user) => {
+        if (!user || user == null) {
+            // Đảm bảo form đăng nhập được hiển thị
+            setTimeout(() => {
+                showTaiKhoan(true);
+            }, 100);
+            return;
+        } 
+        
+        if (user.TrangThai == 0) {
             Swal.fire({
                 title: 'Tài Khoản Bị Khóa!',
                 text: 'Tài khoản của bạn hiện đang bị khóa nên không thể mua hàng!',
@@ -208,13 +216,21 @@ function thanhToan() {
                 confirmButtonText: 'Trở về',
                 footer: '<a href>Liên hệ với Admin</a>'
             });
-        } else {
-        	UserHienTai = user;  // biến toàn cục
-        	htmlThanhToan(user);
+            return;
         }
 
+        // Chỉ thực hiện các bước tiếp theo nếu đã đăng nhập và tài khoản hoạt động
+        UserHienTai = user;  // biến toàn cục
+        htmlThanhToan(user);
+        setTimeout(() => {
+            $('#exampleModal').modal('show');
+        }, 100);
     }, (error) => {
         console.log(error.responseText);
+        // Đảm bảo form đăng nhập được hiển thị khi có lỗi
+        setTimeout(() => {
+            showTaiKhoan(true);
+        }, 100);
     });
 }
 
@@ -250,35 +266,48 @@ function htmlThanhToan(userHienTai) {
 }
 
 function xacNhanThanhToan() {
-	var dulieu = {
-		maNguoiDung: UserHienTai.MaND,
-		tenNguoiNhan: $("#inputTen").val(),
-		sdtNguoiNhan: $("#inputSDT").val(),
-		diaChiNguoiNhan: $("#inputDiaChi").val(),
-		phuongThucTT: $("#selectHinhThucTT").val(),
-		dssp: getListGioHang(),
-		tongTien: TotalPrice,
-		ngayLap: new Date().toMysqlFormat()
-	}
+    // Kiểm tra lại một lần nữa trước khi xử lý thanh toán
+    getCurrentUser((user) => {
+        if (!user || user == null) {
+            $('#exampleModal').modal('hide');
+            showTaiKhoan(true);
+            return false;
+        }
 
-	$.ajax({
-		type: "POST",
-		url: "php/xulythanhtoan.php",
-		dataType: "json",
-		data: {
-			request: "themdonhang",
-			dulieu: dulieu
-		},
-		success: function(data) {
-			capNhatMoiThu([]);
-		},
-		error: function(e) {
-			console.log(e.responseText)
-		}
+        var dulieu = {
+            maNguoiDung: user.MaND, // Dùng user thay vì UserHienTai
+            tenNguoiNhan: $("#inputTen").val(),
+            sdtNguoiNhan: $("#inputSDT").val(),
+            diaChiNguoiNhan: $("#inputDiaChi").val(),
+            phuongThucTT: $("#selectHinhThucTT").val(),
+            dssp: getListGioHang(),
+            tongTien: TotalPrice,
+            ngayLap: new Date().toMysqlFormat()
+        }
 
-	})
+        $.ajax({
+            type: "POST",
+            url: "php/xulythanhtoan.php",
+            dataType: "json",
+            data: {
+                request: "themdonhang",
+                dulieu: dulieu
+            },
+            success: function(data) {
+                capNhatMoiThu([]);
+            },
+            error: function(e) {
+                console.log(e.responseText)
+            }
+        });
+    }, (error) => {
+        console.log(error.responseText);
+        $('#exampleModal').modal('hide');
+        showTaiKhoan(true);
+        return false;
+    });
 
-	return false;
+    return false;
 }
 
 function xoaHet() {

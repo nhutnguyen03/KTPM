@@ -807,38 +807,40 @@ function getListDonHang() {
 
 // Duyệt
 function duyet(maDonHang, duyetDon) {
-    var u = getListUser();
-    for (var i = 0; i < u.length; i++) {
-        for (var j = 0; j < u[i].donhang.length; j++) {
-            if (u[i].donhang[j].ngaymua == maDonHang) {
-                if (duyetDon) {
-                    if (u[i].donhang[j].tinhTrang == 'Đang chờ xử lý') {
-                        u[i].donhang[j].tinhTrang = 'Đã giao hàng';
-
-                    } else if (u[i].donhang[j].tinhTrang == 'Đã hủy') {
-                        alert('Không thể duyệt đơn đã hủy !');
-                        return;
-                    }
-                } else {
-                    if (u[i].donhang[j].tinhTrang == 'Đang chờ xử lý') {
-                        if (window.confirm('Bạn có chắc muốn hủy đơn hàng này. Hành động này sẽ không thể khôi phục lại !'))
-                            u[i].donhang[j].tinhTrang = 'Đã hủy';
-
-                    } else if (u[i].donhang[j].tinhTrang == 'Đã giao hàng') {
-                        alert('Không thể hủy đơn hàng đã giao !');
-                        return;
-                    }
-                }
-                break;
+    $.ajax({
+        type: "POST",
+        url: "php/xulydonhang.php",
+        dataType: "json",
+        data: {
+            request: "capnhattrangthai",
+            maHD: maDonHang,
+            trangThai: duyetDon ? 2 : 4 // 2: Đã gửi vận chuyển, 4: Đã hủy
+        },
+        success: function(data) {
+            if(data.success) {
+                Swal.fire({
+                    type: 'success',
+                    title: duyetDon ? 'Đã cập nhật trạng thái đơn hàng thành "Đã gửi vận chuyển"' : 'Đã hủy đơn hàng'
+                }).then(() => {
+                    // Tự động cập nhật trang
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    type: 'error',
+                    title: 'Lỗi',
+                    text: data.message
+                });
             }
+        },
+        error: function(e) {
+            Swal.fire({
+                type: "error",
+                title: "Lỗi cập nhật trạng thái",
+                html: e.responseText
+            });
         }
-    }
-
-    // lưu lại
-    setListUser(u);
-
-    // vẽ lại
-    addTableDonHang();
+    });
 }
 
 function locDonHangTheoKhoangNgay() {

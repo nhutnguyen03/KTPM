@@ -6,7 +6,7 @@ class DB_driver
   
   public $__conn,
         $host = "localhost",
-        $DbName = "web2",
+        $DbName = "phonewebsite",
         $user = "root",
         $pass = "";
 

@@ -94,7 +94,7 @@ function addHome()
         <div class="owl-carousel owl-theme"></div>
     </div> <!-- End Banner -->
     
-    <div class="smallbanner" style="width: 100%;"></div>
+    
 
     <div class="companysFilter">
         <button class="companysButton" onclick="setCompanysMenu()">
